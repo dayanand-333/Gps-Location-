@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>GPS Location Finder</title>
+<style>
+:root{--primary:#4f46e5;--bg:#f4f5fb;--ink:#172033;--muted:#667085}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;min-height:100dvh;padding:18px 14px;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(145deg,#eef2ff,#f8fafc 55%,#e0e7ff);color:var(--ink)}
+main{width:100%;max-width:480px;background:#fff;border-radius:22px;padding:clamp(20px,5vw,32px);box-shadow:0 14px 40px #1e293b18}
+.icon{width:62px;height:62px;border-radius:18px;background:#eef2ff;display:grid;place-items:center;font-size:30px;margin-bottom:18px}
+h1{font-size:clamp(1.5rem,5vw,2rem);margin:0 0 8px;letter-spacing:-.03em}
+.intro{margin:0 0 22px;color:var(--muted);line-height:1.55}
+button,a.action{width:100%;min-height:48px;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:650;cursor:pointer;text-align:center;text-decoration:none;display:block}
+#getLocation{background:var(--primary);color:white}
+#getLocation:disabled{opacity:.65;cursor:wait}
+.status{margin:15px 0 0;padding:12px 13px;border-radius:10px;background:#f8fafc;color:#475467;font-size:.92rem;line-height:1.45;overflow-wrap:anywhere}
+.results{display:none;margin-top:20px}
+.field{padding:13px 14px;background:#f8fafc;border:1px solid #eaecf0;border-radius:12px;margin-bottom:10px}
+.field label{display:block;color:var(--muted);font-size:.8rem;margin-bottom:5px}
+.value{font-size:1.05rem;font-weight:650;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.actions{display:grid;gap:10px;margin-top:12px}
+.secondary{color:#3730a3;background:#eef2ff}
+.map{color:white;background:#0f766e}
+.note{font-size:.82rem;line-height:1.5;color:var(--muted);margin:18px 0 0}
+footer{text-align:center;font-size:.78rem;color:#98a2b3;margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+<div class="icon" aria-hidden="true">ðŸ“</div>
+<h1>GPS Location Finder</h1>
+<p class="intro">Tap below and allow location access to find your device's latitude and longitude.</p>
+<button id="getLocation" type="button">Get My GPS Location</button>
+<div id="status" class="status" role="status" aria-live="polite">Ready. Internet is not needed to open this page once it has been installed and cached, but GPS permission is still required.</div>
+<section id="results" class="results" aria-label="Location results">
+<div class="field"><label>Latitude</label><div id="latitude" class="value">â€”</div></div>
+<div class="field"><label>Longitude</label><div id="longitude" class="value">â€”</div></div>
+<div class="field"><label>Accuracy</label><div id="accuracy" class="value">â€”</div></div>
+<div class="actions">
+<button id="copy" class="secondary" type="button">Copy Coordinates</button>
+<a id="mapLink" class="action map" href="#" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+</div>
+</section>
+<p class="note">Privacy: this page does not upload or save your coordinates. GPS location permission is required. For offline use, install the page as a home-screen app while online first. The page can work offline after it has been cached by a supporting browser, but some browsers' local-file shortcuts do not grant GPS access.</p>
+<footer>GPS Location Finder</footer>
+</main>
+<script>
+const getButton=document.getElementById('getLocation');
+const statusBox=document.getElementById('status');
+const results=document.getElementById('results');
+let coordsText='';
+getButton.addEventListener('click',()=>{
+ if(!navigator.geolocation){statusBox.textContent='This browser does not support location services.';return;}
+ getButton.disabled=true;getButton.textContent='Finding locationâ€¦';statusBox.textContent='Requesting location permission. Please waitâ€¦';
+ navigator.geolocation.getCurrentPosition(position=>{
+  const {latitude,longitude,accuracy}=position.coords;
+  document.getElementById('latitude').textContent=latitude.toFixed(7);
+  document.getElementById('longitude').textContent=longitude.toFixed(7);
+  document.getElementById('accuracy').textContent=`Within approximately ${Math.round(accuracy)} metres`;
+  coordsText=`${latitude.toFixed(7)}, ${longitude.toFixed(7)}`;
+  document.getElementById('mapLink').href=`https://www.google.com/maps?q=${encodeURIComponent(latitude+','+longitude)}`;
+  results.style.display='block';statusBox.textContent='Location found successfully.';
+  getButton.textContent='Refresh GPS Location';getButton.disabled=false;
+ },error=>{
+  const messages={1:'Location permission was denied. Allow location access in your browser/site settings and try again.',2:'Your location could not be determined. Turn on phone Location/GPS and try again, preferably outdoors.',3:'The location request timed out. Please try again.'};
+  statusBox.textContent=messages[error.code]||'Unable to get location. Please try again.';
+  getButton.textContent='Try Again';getButton.disabled=false;
+ },{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+});
+document.getElementById('copy').addEventListener('click',async()=>{
+ if(!coordsText)return;
+ try{await navigator.clipboard.writeText(coordsText);statusBox.textContent='Coordinates copied to clipboard.';}
+ catch(e){statusBox.textContent='Clipboard access is unavailable here. You can select and copy the coordinates manually.';}
+});
+</script>
+</body>
+</html>
