@@ -1,6 +1,6 @@
 /* Service worker: makes the app open offline.
    Change CACHE_VERSION whenever you upload a new version of the files. */
-var CACHE_VERSION = 'school-gps-v1';
+var CACHE_VERSION = 'school-gps-v2';
 var ASSETS = [
   './',
   './index.html',
@@ -12,7 +12,12 @@ var ASSETS = [
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then(function (cache) { return cache.addAll(ASSETS); })
+      .then(function (cache) {
+        /* cache each file separately so one missing file cannot break offline mode */
+        return Promise.all(ASSETS.map(function (a) {
+          return cache.add(a).catch(function () { /* skip file that is missing */ });
+        }));
+      })
       .then(function () { return self.skipWaiting(); })
   );
 });
